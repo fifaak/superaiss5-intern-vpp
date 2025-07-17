@@ -1,4 +1,3 @@
-# server.py
 import torch
 from model import InferenceModel
 from flask import Flask, request, jsonify
@@ -14,8 +13,6 @@ _DEFAULT_LOCATIONS = {
     "Data_อาคารวิทยนิเวศน์":  (13.73723, 100.53015),
 }
 
-EXPECTED_NODES = len(_DEFAULT_LOCATIONS)
-
 app = Flask(__name__)
 CORS(app)
 
@@ -26,49 +23,55 @@ def forecast():
     try:
         data = request.get_json()
 
-        # determine stations & locations
+        # 1) figure out station list & locations
         stations_in = data.get("stations")
         if stations_in:
-            if len(stations_in) != EXPECTED_NODES:
-                raise ValueError(
-                    f"Model expects {EXPECTED_NODES} stations, "
-                    f"but got {len(stations_in)}."
-                )
             station_names = [s["name"] for s in stations_in]
-            locations = {s["name"]: (s["lat"], s["lon"]) for s in stations_in}
+            locations     = {s["name"]:(s["lat"], s["lon"]) for s in stations_in}
         else:
             station_names = list(_DEFAULT_LOCATIONS.keys())
-            locations = _DEFAULT_LOCATIONS
+            locations     = _DEFAULT_LOCATIONS
 
-        # build X tensor and validate shape
+        num_nodes = len(station_names)
+
+        # 2) build & validate X
         X_input = torch.tensor(data["X"]).float()
-        # expected shape: [1, EXPECTED_NODES, 1, T]
-        if X_input.ndim != 4 or X_input.shape[1] != EXPECTED_NODES:
+        # must be 4-D: [batch, N, 1, T]
+        if X_input.ndim != 4 or X_input.shape[1] != num_nodes:
             raise ValueError(
-                f"Input X must have shape [1, {EXPECTED_NODES}, 1, T], "
-                f"but got {list(X_input.shape)}."
+              f"Input X must have shape [B, {num_nodes}, 1, T], "
+              f"but got {list(X_input.shape)}."
             )
 
-        # build edge_index
+        # 3) get or build edge_index
         if inf.need_edge:
-            edge_index = torch.tensor(data["edge_index"]).long()
-            # optional: validate edge_index dims here...
+            if "edge_index" in data:
+                edge_index = torch.tensor(data["edge_index"]).long()
+            else:
+                # fully-connected directed: i→j for all i≠j
+                idx_i, idx_j = [], []
+                for i in range(num_nodes):
+                    for j in range(num_nodes):
+                        if i != j:
+                            idx_i.append(i); idx_j.append(j)
+                edge_index = torch.tensor([idx_i, idx_j], dtype=torch.long)
             preds = inf.forecast(X_input, edge_index)
         else:
             preds = inf.forecast(X_input)
 
+        # 4) format and return
         preds_np = preds.squeeze(0).numpy()  # [N, T]
-        station_data = []
+        out = []
         for i, name in enumerate(station_names):
             lat, lon = locations[name]
-            station_data.append({
-                "name": name,
-                "lat": lat,
-                "lon": lon,
+            out.append({
+                "name":   name,
+                "lat":    lat,
+                "lon":    lon,
                 "values": preds_np[i].tolist()
             })
 
-        return jsonify({"stations": station_data})
+        return jsonify({"stations": out})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
