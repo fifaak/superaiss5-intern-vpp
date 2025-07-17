@@ -1,6 +1,7 @@
 import torch
 from model import InferenceModel
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 # --- Example usage ---
 # 2. Graph setup
 locations = {
@@ -15,7 +16,8 @@ station_names = list(locations.keys())
 num_nodes = len(station_names)
 
 app = Flask(__name__)
-inf = InferenceModel("/kaggle/working/astgcn_v2_final.onnx", device="cpu")
+CORS(app)  # <-- ADD THIS LINE
+inf = InferenceModel("astgcnv2_5epoch.onnx", device="cpu")
 
 @app.route("/forecast", methods=["POST"])
 def forecast():
@@ -34,4 +36,4 @@ def forecast():
         return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8000, debug=True)
