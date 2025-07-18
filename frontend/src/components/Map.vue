@@ -83,6 +83,58 @@ export default {
     });
   },
   methods: {
+    // Add this helper method to normalize station coordinates
+    getNormalizedCoords(station) {
+      return {
+        lat: station.latitude || station.lat,
+        lon: station.longitude || station.lon,
+        name: station.name
+      };
+    },
+
+    calculateCenter() {
+      if (!this.stations || this.stations.length === 0) return [13.736717, 100.523186];
+      
+      const coordinates = this.stations.map(this.getNormalizedCoords);
+      const lats = coordinates.map(c => c.lat);
+      const lons = coordinates.map(c => c.lon);
+      
+      const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+      const centerLon = lons.reduce((a, b) => a + b, 0) / lons.length;
+      
+      return [centerLat, centerLon];
+    },
+
+    calculateBounds() {
+      if (!this.stations || this.stations.length === 0) return null;
+      
+      const coordinates = this.stations.map(this.getNormalizedCoords);
+      const lats = coordinates.map(c => c.lat);
+      const lons = coordinates.map(c => c.lon);
+      
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLon = Math.min(...lons);
+      const maxLon = Math.max(...lons);
+      
+      return [[minLat, minLon], [maxLat, maxLon]];
+    },
+
+    updateMapView() {
+      if (!this.map) return;
+      
+      const bounds = this.calculateBounds();
+      if (bounds) {
+        this.map.fitBounds(bounds, {
+          padding: [50, 50],
+          maxZoom: 16
+        });
+      } else {
+        const center = this.calculateCenter();
+        this.map.setView(center, 13);
+      }
+    },
+
     initLeaflet() {
       if (typeof L === 'undefined') {
         console.error('Leaflet not loaded!');
@@ -102,7 +154,7 @@ export default {
       });
 
       this.map = L.map("map2d", {
-        center: [51.505, -0.09],
+        center: this.calculateCenter(),
         zoom: 13,
         layers: [osm]
       });
@@ -121,6 +173,23 @@ export default {
           .addTo(this.markersLayer)
           .bindPopup(station.name);
       });
+    },
+
+    updateMarkers() {
+      if (!this.map || !this.markersLayer) return;
+      
+      this.markersLayer.clearLayers();
+      
+      this.stations.forEach(station => {
+        const coords = this.getNormalizedCoords(station);
+        if (coords.lat && coords.lon) {
+          L.marker([coords.lat, coords.lon])
+            .addTo(this.markersLayer)
+            .bindPopup(coords.name);
+        }
+      });
+
+      this.updateMapView();
     },
 
     async loadCesiumScript() {
@@ -171,9 +240,56 @@ export default {
       });
 
       this.cesiumViewer.zoomTo(this.cesiumViewer.entities);
+    },
+
+    updateCesiumView() {
+      if (!this.cesiumViewer || this.stations.length === 0) return;
+
+      try {
+        // Clear existing entities
+        this.cesiumViewer.entities.removeAll();
+
+        // Add station markers
+        this.stations.forEach(station => {
+          const coords = this.getNormalizedCoords(station);
+          if (coords.lat && coords.lon) {
+            this.cesiumViewer.entities.add({
+              position: Cesium.Cartesian3.fromDegrees(coords.lon, coords.lat),
+              point: {
+                pixelSize: 10,
+                color: Cesium.Color.BLUE
+              },
+              label: {
+                text: coords.name,
+                font: "14px sans-serif",
+                verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+              }
+            });
+          }
+        });
+
+        // Zoom to entities
+        if (this.cesiumViewer.entities.values.length > 0) {
+          this.cesiumViewer.zoomTo(this.cesiumViewer.entities);
+        }
+      } catch (error) {
+        console.error('Error updating Cesium view:', error);
+      }
     }
   },
   watch: {
+    stations: {
+      handler(newStations) {
+        if (!newStations || newStations.length === 0) return;
+        
+        if (this.viewMode === '2d') {
+          this.updateMarkers();
+        } else if (this.cesiumViewer) {
+          this.updateCesiumView();
+        }
+      },
+      deep: true
+    },
     viewMode(newMode) {
       if (newMode === "3d" && !this.cesiumViewer && typeof Cesium !== 'undefined') {
         this.initCesium();
