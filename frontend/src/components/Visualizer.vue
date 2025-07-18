@@ -48,7 +48,7 @@ export default {
         const start = props.startDateTime ? new Date(props.startDateTime) : new Date()
 
         for (let i = 0; i < stationsData[0]?.values.length; i++) {
-          const time = new Date(start.getTime() + i * 30 * 60000) // Add 30 minutes each step
+          const time = new Date(start.getTime() + i * 15 * 60000) // Changed from 30 to 15 minutes
           labels.push(
             time.toLocaleString('th-TH', {
               month: 'short',

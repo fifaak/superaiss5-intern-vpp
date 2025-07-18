@@ -67,7 +67,7 @@
             </div>
             <div class="col-md-12">
               <label class="form-label">
-                Values (every 30 min)&nbsp;
+                Values (every 15 min)&nbsp;
                 <small class="text-muted"
                   >(comma-sep, e.g. 0.1,0.2,0.3…)</small
                 >
