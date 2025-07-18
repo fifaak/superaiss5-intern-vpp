@@ -16,6 +16,10 @@ export default {
     stations: {
       type: Array,
       required: true
+    },
+    startDateTime: {
+      type: String,
+      default: null
     }
   },
   setup(props) {
@@ -38,10 +42,29 @@ export default {
         // Chart.js will pick default colors
       }))
 
+      // Generate time labels with date and time
+      const generateTimeLabels = () => {
+        const labels = []
+        const start = props.startDateTime ? new Date(props.startDateTime) : new Date()
+
+        for (let i = 0; i < stationsData[0]?.values.length; i++) {
+          const time = new Date(start.getTime() + i * 30 * 60000) // Add 30 minutes each step
+          labels.push(
+            time.toLocaleString('th-TH', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          )
+        }
+        return labels
+      }
+
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: stationsData[0]?.values.map((_, i) => i), // 0,1,2,... as x-axis
+          labels: generateTimeLabels(),
           datasets
         },
         options: {
@@ -53,6 +76,13 @@ export default {
             intersect: false
           },
           plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  return `${context.dataset.label}: ${context.parsed.y} kW`
+                }
+              }
+            },
             legend: {
               position: 'top',
               align: 'start',
@@ -75,17 +105,22 @@ export default {
               display: true,
               title: {
                 display: true,
-                text: 'Timestep'
+                text: 'Date/Time'
               },
               grid: {
-                display: false
+                display: true,
+                color: '#f0f0f0'
+              },
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
               }
             },
             y: {
               display: true,
               title: {
                 display: true,
-                text: 'Value'
+                text: 'Power (kW)'
               },
               grid: {
                 color: '#f0f0f0'

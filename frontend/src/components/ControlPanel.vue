@@ -10,6 +10,19 @@
         </button>
       </div>
 
+      <!-- Add datetime input before stations list -->
+      <div class="mb-3">
+        <label class="form-label">
+          <i class="bi bi-calendar"></i> Start Date/Time
+        </label>
+        <input
+          type="datetime-local"
+          class="form-control"
+          v-model="startDateTime"
+          required
+        />
+      </div>
+
       <div class="stations-list">
         <div
           v-for="(st, idx) in stations"
@@ -98,6 +111,7 @@ export default {
   name: "ControlPanel",
   data() {
     return {
+      startDateTime: new Date().toISOString().slice(0, 16), // Format: YYYY-MM-DDThh:mm
       // list of { name, lat, lon, values: "comma,sep,here" }
       stations: [
         { name: "", lat: null, lon: null, values: "" }
@@ -156,7 +170,6 @@ export default {
       this.loading = true;
       this.error = null;
       try {
-        // parse station values into arrays
         const parsed = this.stations.map((st) => {
           const arr = st.values
             .split(",")
@@ -188,6 +201,7 @@ export default {
           X,
           edge_index,
           stations: parsed.map(({ name, lat, lon }) => ({ name, lat, lon })),
+          startDateTime: this.startDateTime // Add startDateTime to payload
         };
 
         const res = await fetch("http://localhost:8000/forecast", {
@@ -200,7 +214,10 @@ export default {
         this.result = json;
 
         if (json.stations) {
-          this.$emit("predicted", json.stations);
+          this.$emit("predicted", {
+            stations: json.stations,
+            startDateTime: this.startDateTime
+          });
         }
       } catch (err) {
         this.error = err.message;

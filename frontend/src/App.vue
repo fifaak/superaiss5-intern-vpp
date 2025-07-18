@@ -6,7 +6,7 @@
         <h3><i class="bi bi-bar-chart-line-fill icon"></i> VPP Forecast</h3>
       </div>
       <div class="sidebar-content">
-        <ControlPanel @predicted="stations = $event" />
+        <ControlPanel @predicted="handlePredicted" />
       </div>
     </div>
 
@@ -16,7 +16,10 @@
         <Map :stations="stations"/>
       </div>
       <div class="content-section chart-section" v-if="stations.length">
-        <Visualizer :stations="stations" />
+        <Visualizer 
+          :stations="stations" 
+          :start-date-time="startDateTime"
+        />
       </div>
     </div>
   </div>
@@ -35,8 +38,15 @@ export default {
   data() {
     return {
       stations: [],
+      startDateTime: null
     };
   },
+  methods: {
+    handlePredicted({ stations, startDateTime }) {
+      this.stations = stations;
+      this.startDateTime = startDateTime;
+    }
+  }
 };
 </script>
 
