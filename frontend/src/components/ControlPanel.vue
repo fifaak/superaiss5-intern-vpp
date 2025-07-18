@@ -2,10 +2,10 @@
   <div class="control-panel">
     <form @submit.prevent="submitForecast">
       <div class="actions mb-3">
-        <button type="button" class="btn btn-outline-primary" @click="addStation">
+        <button type="button" class="btn btn-primary" @click="addStation">
           <i class="bi bi-plus-lg"></i> Add Station
         </button>
-        <button type="button" class="btn btn-outline-secondary" @click="fillSample">
+        <button type="button" class="btn btn-secondary" @click="fillSample">
           <i class="bi bi-file-text"></i> Sample Data
         </button>
       </div>
@@ -72,11 +72,17 @@
       </div>
 
       <div class="submit-section">
-        <button class="btn btn-primary w-100" type="submit">
-          <i class="bi bi-play-fill"></i> Run Forecast
+        <button class="btn btn-primary w-100" type="submit" :disabled="loading">
+          <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i v-else class="bi bi-play-fill"></i>
+          {{ loading ? 'Running...' : 'Run Forecast' }}
         </button>
       </div>
     </form>
+
+    <div v-if="error" class="alert alert-danger mt-3">
+      {{ error }}
+    </div>
 
     <div v-if="result" class="result-section mt-3">
       <h6>Predictions:</h6>
@@ -97,6 +103,8 @@ export default {
         { name: "", lat: null, lon: null, values: "" }
       ],
       result: null,
+      loading: false,
+      error: null
     };
   },
   methods: {
@@ -145,6 +153,8 @@ export default {
       ];
     },
     async submitForecast() {
+      this.loading = true;
+      this.error = null;
       try {
         // parse station values into arrays
         const parsed = this.stations.map((st) => {
@@ -193,7 +203,9 @@ export default {
           this.$emit("predicted", json.stations);
         }
       } catch (err) {
-        this.result = { error: err.message };
+        this.error = err.message;
+      } finally {
+        this.loading = false;
       }
     },
   },
@@ -210,12 +222,19 @@ export default {
 .stations-list {
   overflow-y: auto;
   flex: 1;
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
 }
 
 .station-card {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease;
+}
+
+.station-card:hover {
+  transform: translateY(-2px);
 }
 
 .station-header {
@@ -231,9 +250,13 @@ export default {
 }
 
 .submit-section {
+  position: sticky;
+  bottom: 0;
   padding: 1rem 0;
-  border-top: 1px solid #eee;
   background: white;
+  border-top: 1px solid #eee;
+  margin: 0 -1.5rem;
+  padding: 1rem 1.5rem;
 }
 
 .result-box {
@@ -243,5 +266,17 @@ export default {
   font-size: 0.9em;
   max-height: 200px;
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .stations-list {
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+  
+  .submit-section {
+    margin: 0 -1rem;
+    padding: 1rem;
+  }
 }
 </style>

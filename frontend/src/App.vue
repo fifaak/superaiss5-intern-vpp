@@ -3,7 +3,7 @@
     <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-header">
-        <h3>VPP Forecast</h3>
+        <h3><i class="bi bi-bar-chart-line-fill icon"></i> VPP Forecast</h3>
       </div>
       <div class="sidebar-content">
         <ControlPanel @predicted="stations = $event" />
@@ -46,27 +46,30 @@ export default {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  background: #f8f9fa;
 }
 
 .sidebar {
   width: 400px;
   height: 100%;
   background: white;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
   z-index: 1000;
+  transition: transform 0.3s ease;
 }
 
 .sidebar-header {
-  padding: 1rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
   border-bottom: 1px solid #eee;
 }
 
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
 .main-content {
@@ -74,14 +77,30 @@ export default {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  padding: 1rem;
+  gap: 1rem;
 }
 
 .content-section {
-  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 1.5rem;
 }
 
 .chart-section {
-  border-top: 1px solid #eee;
+  min-height: 400px;
+}
+
+.icon {
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 350px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -97,6 +116,11 @@ export default {
 
   .main-content {
     height: 50vh;
+    padding: 0.5rem;
+  }
+
+  .content-section {
+    padding: 1rem;
   }
 }
 </style>

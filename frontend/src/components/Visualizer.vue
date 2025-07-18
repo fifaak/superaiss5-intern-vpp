@@ -46,6 +46,7 @@ export default {
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           interaction: {
             mode: 'nearest',
             axis: 'x',
@@ -53,11 +54,20 @@ export default {
           },
           plugins: {
             legend: {
-              position: 'bottom'
+              position: 'top',
+              align: 'start',
+              labels: {
+                boxWidth: 15,
+                usePointStyle: true
+              }
             },
             title: {
               display: true,
-              text: 'Station Predictions Over Time'
+              text: '📈 Station Predictions Over Time', // updated title with icon
+              padding: {
+                top: 10,
+                bottom: 20
+              }
             }
           },
           scales: {
@@ -66,6 +76,9 @@ export default {
               title: {
                 display: true,
                 text: 'Timestep'
+              },
+              grid: {
+                display: false
               }
             },
             y: {
@@ -73,6 +86,9 @@ export default {
               title: {
                 display: true,
                 text: 'Value'
+              },
+              grid: {
+                color: '#f0f0f0'
               }
             }
           }
@@ -107,10 +123,18 @@ export default {
 .visualizer {
   position: relative;
   width: 100%;
-  height: 400px;
+  height: 100%;
+  min-height: 400px;
 }
+
 canvas {
   width: 100% !important;
   height: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .visualizer {
+    min-height: 300px;
+  }
 }
 </style>
