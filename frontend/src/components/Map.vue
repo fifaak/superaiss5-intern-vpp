@@ -100,7 +100,7 @@ export default {
     initCesium() {
       if (this.cesiumViewer || typeof Cesium === 'undefined') return;
 
-      Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGNmODc0My03ODI2LTRkNGYtYWU5My0zYWM5MTU1OGE4NjgiLCJpZCI6MzIyNzEyLCJpYXQiOjE3NTI4MzE4ODd9.1oKKgaweBEEAU1pI-c_edzK7od6aBtD-0WEQsItJkl0";
+      Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
 
       this.cesiumViewer = new Cesium.Viewer("map3d", {
         timeline: false,
