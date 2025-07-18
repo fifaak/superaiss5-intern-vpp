@@ -1,63 +1,15 @@
 <!-- Access token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGNmODc0My03ODI2LTRkNGYtYWU5My0zYWM5MTU1OGE4NjgiLCJpZCI6MzIyNzEyLCJpYXQiOjE3NTI4MzE4ODd9.1oKKgaweBEEAU1pI-c_edzK7od6aBtD-0WEQsItJkl0 -->
 <template>
-  <div class="map-container">
-    <div class="map-controls">
-      <button class="map-btn" :class="{ active: viewMode === '2d' }" @click="viewMode = '2d'">
-        <i class="bi bi-map"></i> 2D
-      </button>
-      <button class="map-btn" :class="{ active: viewMode === '3d' }" @click="viewMode = '3d'">
-        <i class="bi bi-globe"></i> 3D
-      </button>
+  <div>
+    <div class="btn-group mb-2">
+      <button class="btn btn-primary" @click="viewMode = '2d'">2D (Leaflet)</button>
+      <button class="btn btn-secondary" @click="viewMode = '3d'">3D (Cesium)</button>
     </div>
 
-    <div v-show="viewMode === '2d'" id="map2d" class="map-view"></div>
-    <div v-show="viewMode === '3d'" id="map3d" class="map-view"></div>
+    <div v-show="viewMode === '2d'" id="map2d" style="height: 500px; width: 100%;"></div>
+    <div v-show="viewMode === '3d'" id="map3d" style="height: 500px; width: 100%;"></div>
   </div>
 </template>
-
-<style scoped>
-.map-container {
-  position: relative;
-  height: 100%;
-  min-height: 500px;
-  background: #f8f9fa;
-}
-
-.map-controls {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 1000;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  padding: 5px;
-}
-
-.map-btn {
-  background: white;
-  border: none;
-  padding: 8px 16px;
-  margin: 0 2px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.map-btn:hover {
-  background: #f0f0f0;
-}
-
-.map-btn.active {
-  background: #e0e0e0;
-  font-weight: bold;
-}
-
-.map-view {
-  height: 100%;
-  width: 100%;
-}
-</style>
 
 <script>
 export default {
@@ -83,58 +35,6 @@ export default {
     });
   },
   methods: {
-    // Add this helper method to normalize station coordinates
-    getNormalizedCoords(station) {
-      return {
-        lat: station.latitude || station.lat,
-        lon: station.longitude || station.lon,
-        name: station.name
-      };
-    },
-
-    calculateCenter() {
-      if (!this.stations || this.stations.length === 0) return [13.736717, 100.523186];
-      
-      const coordinates = this.stations.map(this.getNormalizedCoords);
-      const lats = coordinates.map(c => c.lat);
-      const lons = coordinates.map(c => c.lon);
-      
-      const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
-      const centerLon = lons.reduce((a, b) => a + b, 0) / lons.length;
-      
-      return [centerLat, centerLon];
-    },
-
-    calculateBounds() {
-      if (!this.stations || this.stations.length === 0) return null;
-      
-      const coordinates = this.stations.map(this.getNormalizedCoords);
-      const lats = coordinates.map(c => c.lat);
-      const lons = coordinates.map(c => c.lon);
-      
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLon = Math.min(...lons);
-      const maxLon = Math.max(...lons);
-      
-      return [[minLat, minLon], [maxLat, maxLon]];
-    },
-
-    updateMapView() {
-      if (!this.map) return;
-      
-      const bounds = this.calculateBounds();
-      if (bounds) {
-        this.map.fitBounds(bounds, {
-          padding: [50, 50],
-          maxZoom: 16
-        });
-      } else {
-        const center = this.calculateCenter();
-        this.map.setView(center, 13);
-      }
-    },
-
     initLeaflet() {
       if (typeof L === 'undefined') {
         console.error('Leaflet not loaded!');
@@ -154,7 +54,7 @@ export default {
       });
 
       this.map = L.map("map2d", {
-        center: this.calculateCenter(),
+        center: [51.505, -0.09],
         zoom: 13,
         layers: [osm]
       });
@@ -173,23 +73,6 @@ export default {
           .addTo(this.markersLayer)
           .bindPopup(station.name);
       });
-    },
-
-    updateMarkers() {
-      if (!this.map || !this.markersLayer) return;
-      
-      this.markersLayer.clearLayers();
-      
-      this.stations.forEach(station => {
-        const coords = this.getNormalizedCoords(station);
-        if (coords.lat && coords.lon) {
-          L.marker([coords.lat, coords.lon])
-            .addTo(this.markersLayer)
-            .bindPopup(coords.name);
-        }
-      });
-
-      this.updateMapView();
     },
 
     async loadCesiumScript() {
@@ -225,71 +108,30 @@ export default {
       });
 
       this.stations.forEach(station => {
-        this.cesiumViewer.entities.add({
-          position: Cesium.Cartesian3.fromDegrees(station.longitude, station.latitude),
-          point: {
-            pixelSize: 10,
-            color: Cesium.Color.BLUE
-          },
-          label: {
-            text: station.name,
-            font: "14px sans-serif",
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-          }
-        });
+        const lat = station.latitude || station.lat;
+        const lon = station.longitude || station.lon;
+
+        if (lat && lon) {
+          this.cesiumViewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(lon, lat),
+            billboard: {
+              image: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png", // Pin icon
+              width: 32,
+              height: 32
+            },
+            label: {
+              text: station.name,
+              font: "14px sans-serif",
+              verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+            }
+          });
+        }
       });
 
       this.cesiumViewer.zoomTo(this.cesiumViewer.entities);
-    },
-
-    updateCesiumView() {
-      if (!this.cesiumViewer || this.stations.length === 0) return;
-
-      try {
-        // Clear existing entities
-        this.cesiumViewer.entities.removeAll();
-
-        // Add station markers
-        this.stations.forEach(station => {
-          const coords = this.getNormalizedCoords(station);
-          if (coords.lat && coords.lon) {
-            this.cesiumViewer.entities.add({
-              position: Cesium.Cartesian3.fromDegrees(coords.lon, coords.lat),
-              point: {
-                pixelSize: 10,
-                color: Cesium.Color.BLUE
-              },
-              label: {
-                text: coords.name,
-                font: "14px sans-serif",
-                verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-              }
-            });
-          }
-        });
-
-        // Zoom to entities
-        if (this.cesiumViewer.entities.values.length > 0) {
-          this.cesiumViewer.zoomTo(this.cesiumViewer.entities);
-        }
-      } catch (error) {
-        console.error('Error updating Cesium view:', error);
-      }
     }
   },
   watch: {
-    stations: {
-      handler(newStations) {
-        if (!newStations || newStations.length === 0) return;
-        
-        if (this.viewMode === '2d') {
-          this.updateMarkers();
-        } else if (this.cesiumViewer) {
-          this.updateCesiumView();
-        }
-      },
-      deep: true
-    },
     viewMode(newMode) {
       if (newMode === "3d" && !this.cesiumViewer && typeof Cesium !== 'undefined') {
         this.initCesium();
