@@ -2,17 +2,22 @@
   <div class="app-container">
     <!-- Sidebar -->
     <div class="sidebar">
-      <h4 class="mb-4">Control Panel</h4>
-      <ControlPanel @predicted="stations = $event" />
+      <div class="sidebar-header">
+        <h3>VPP Forecast</h3>
+      </div>
+      <div class="sidebar-content">
+        <ControlPanel @predicted="stations = $event" />
+      </div>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
-      <h2 class="mb-4">VPP Forecast Client</h2>
-      <h4>Map</h4>
-      <Map :stations="stations" />
-      <h4>Graph</h4>
-      <Visualizer v-if="stations.length" :stations="stations" class="mt-5" />
+      <div class="content-section">
+        <Map :stations="stations"/>
+      </div>
+      <div class="content-section chart-section" v-if="stations.length">
+        <Visualizer :stations="stations" />
+      </div>
     </div>
   </div>
 </template>
@@ -35,38 +40,63 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
 .app-container {
   display: flex;
-  width: 100%;
-  height: 100vh; /* Make sure it covers the full viewport height */
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 .sidebar {
-  width: 300px;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-right: 1px solid #dee2e6;
-  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  width: 400px;
+  height: 100%;
+  background: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.sidebar-header {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
 }
 
 .main-content {
   flex: 1;
-  padding: 20px;
-  box-sizing: border-box; /* Include padding in the element's total width and height */
-  overflow: auto; /* Enable scrolling if content overflows */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
-/* Responsive adjustments */
+.content-section {
+  padding: 1rem;
+}
+
+.chart-section {
+  border-top: 1px solid #eee;
+}
+
 @media (max-width: 768px) {
   .app-container {
-    flex-direction: column; /* Stack sidebar and main content vertically */
+    flex-direction: column;
   }
 
   .sidebar {
     width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #dee2e6;
+    height: auto;
+    max-height: 50vh;
+  }
+
+  .main-content {
+    height: 50vh;
   }
 }
 </style>

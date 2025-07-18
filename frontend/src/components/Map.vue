@@ -1,15 +1,63 @@
 <!-- Access token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGNmODc0My03ODI2LTRkNGYtYWU5My0zYWM5MTU1OGE4NjgiLCJpZCI6MzIyNzEyLCJpYXQiOjE3NTI4MzE4ODd9.1oKKgaweBEEAU1pI-c_edzK7od6aBtD-0WEQsItJkl0 -->
 <template>
-  <div>
-    <div class="btn-group mb-2">
-      <button class="btn btn-primary" @click="viewMode = '2d'">2D (Leaflet)</button>
-      <button class="btn btn-secondary" @click="viewMode = '3d'">3D (Cesium)</button>
+  <div class="map-container">
+    <div class="map-controls">
+      <button class="map-btn" :class="{ active: viewMode === '2d' }" @click="viewMode = '2d'">
+        <i class="bi bi-map"></i> 2D
+      </button>
+      <button class="map-btn" :class="{ active: viewMode === '3d' }" @click="viewMode = '3d'">
+        <i class="bi bi-globe"></i> 3D
+      </button>
     </div>
 
-    <div v-show="viewMode === '2d'" id="map2d" style="height: 500px; width: 100%;"></div>
-    <div v-show="viewMode === '3d'" id="map3d" style="height: 500px; width: 100%;"></div>
+    <div v-show="viewMode === '2d'" id="map2d" class="map-view"></div>
+    <div v-show="viewMode === '3d'" id="map3d" class="map-view"></div>
   </div>
 </template>
+
+<style scoped>
+.map-container {
+  position: relative;
+  height: 100%;
+  min-height: 500px;
+  background: #f8f9fa;
+}
+
+.map-controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 5px;
+}
+
+.map-btn {
+  background: white;
+  border: none;
+  padding: 8px 16px;
+  margin: 0 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.map-btn:hover {
+  background: #f0f0f0;
+}
+
+.map-btn.active {
+  background: #e0e0e0;
+  font-weight: bold;
+}
+
+.map-view {
+  height: 100%;
+  width: 100%;
+}
+</style>
 
 <script>
 export default {
@@ -94,36 +142,36 @@ export default {
       document.body.appendChild(script);
     },
 
-initCesium() {
-  if (this.cesiumViewer || typeof Cesium === 'undefined') return;
+    initCesium() {
+      if (this.cesiumViewer || typeof Cesium === 'undefined') return;
 
-  // ✅ Apply your token before using any Cesium APIs
-  Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGNmODc0My03ODI2LTRkNGYtYWU5My0zYWM5MTU1OGE4NjgiLCJpZCI6MzIyNzEyLCJpYXQiOjE3NTI4MzE4ODd9.1oKKgaweBEEAU1pI-c_edzK7od6aBtD-0WEQsItJkl0";
+      // ✅ Apply your token before using any Cesium APIs
+      Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGNmODc0My03ODI2LTRkNGYtYWU5My0zYWM5MTU1OGE4NjgiLCJpZCI6MzIyNzEyLCJpYXQiOjE3NTI4MzE4ODd9.1oKKgaweBEEAU1pI-c_edzK7od6aBtD-0WEQsItJkl0";
 
-  this.cesiumViewer = new Cesium.Viewer("map3d", {
-    timeline: false,
-    animation: false,
-    sceneModePicker: true,
-    baseLayerPicker: true
-  });
+      this.cesiumViewer = new Cesium.Viewer("map3d", {
+        timeline: false,
+        animation: false,
+        sceneModePicker: true,
+        baseLayerPicker: true
+      });
 
-  this.stations.forEach(station => {
-    this.cesiumViewer.entities.add({
-      position: Cesium.Cartesian3.fromDegrees(station.longitude, station.latitude),
-      point: {
-        pixelSize: 10,
-        color: Cesium.Color.BLUE
-      },
-      label: {
-        text: station.name,
-        font: "14px sans-serif",
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-      }
-    });
-  });
+      this.stations.forEach(station => {
+        this.cesiumViewer.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(station.longitude, station.latitude),
+          point: {
+            pixelSize: 10,
+            color: Cesium.Color.BLUE
+          },
+          label: {
+            text: station.name,
+            font: "14px sans-serif",
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+          }
+        });
+      });
 
-  this.cesiumViewer.zoomTo(this.cesiumViewer.entities);
-}
+      this.cesiumViewer.zoomTo(this.cesiumViewer.entities);
+    }
   },
   watch: {
     viewMode(newMode) {
