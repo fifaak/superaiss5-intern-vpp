@@ -1,9 +1,8 @@
-<!-- Access token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGNmODc0My03ODI2LTRkNGYtYWU5My0zYWM5MTU1OGE4NjgiLCJpZCI6MzIyNzEyLCJpYXQiOjE3NTI4MzE4ODd9.1oKKgaweBEEAU1pI-c_edzK7od6aBtD-0WEQsItJkl0 -->
 <template>
   <div>
     <div class="btn-group mb-2">
-      <button class="btn btn-primary" @click="viewMode = '2d'">2D (Leaflet)</button>
-      <button class="btn btn-secondary" @click="viewMode = '3d'">3D (Cesium)</button>
+      <button class="btn btn-primary" @click="switchTo2D">2D (Leaflet)</button>
+      <button class="btn btn-secondary" @click="switchTo3D">3D (Cesium)</button>
     </div>
 
     <div v-show="viewMode === '2d'" id="map2d" style="height: 500px; width: 100%;"></div>
@@ -13,7 +12,7 @@
 
 <script>
 export default {
-  name: "LeafletMap",
+  name: "LeafletCesiumMap",
   props: {
     stations: {
       type: Array,
@@ -30,11 +29,26 @@ export default {
   },
   mounted() {
     this.initLeaflet();
+
     this.loadCesiumScript().then(() => {
       console.log("CesiumJS loaded.");
     });
   },
   methods: {
+    switchTo2D() {
+      this.viewMode = "2d";
+      this.$nextTick(() => {
+        if (this.map) this.map.invalidateSize();
+      });
+    },
+    switchTo3D() {
+      this.viewMode = "3d";
+      this.$nextTick(() => {
+        if (!this.cesiumViewer && typeof Cesium !== "undefined") {
+          this.initCesium();
+        }
+      });
+    },
     initLeaflet() {
       if (typeof L === 'undefined') {
         console.error('Leaflet not loaded!');
@@ -45,46 +59,36 @@ export default {
         attribution: '&copy; OpenStreetMap contributors'
       });
 
-      const topo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; OpenTopoMap contributors'
-      });
-
-      const carto = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        attribution: '&copy; CartoDB'
-      });
-
       this.map = L.map("map2d", {
-        center: [51.505, -0.09],
+        center: [13.736717, 100.523186],
         zoom: 13,
         layers: [osm]
       });
 
-      const baseLayers = {
-        "OpenStreetMap": osm,
-        "TopoMap": topo,
-        "Carto Light": carto
-      };
-
-      L.control.layers(baseLayers).addTo(this.map);
-
       this.markersLayer = L.layerGroup().addTo(this.map);
+      this.addLeafletMarkers();
+    },
+    addLeafletMarkers() {
+      if (!this.map || !this.markersLayer) return;
+
+      this.markersLayer.clearLayers();
+
       this.stations.forEach(station => {
-        L.marker([station.latitude, station.longitude])
-          .addTo(this.markersLayer)
-          .bindPopup(station.name);
+        const lat = station.latitude || station.lat;
+        const lon = station.longitude || station.lon;
+        if (lat && lon) {
+          L.marker([lat, lon])
+            .addTo(this.markersLayer)
+            .bindPopup(station.name);
+        }
       });
     },
-
     async loadCesiumScript() {
       if (typeof Cesium !== "undefined") return;
 
       const script = document.createElement("script");
       script.src = "https://unpkg.com/cesium@1.116.0/Build/Cesium/Cesium.js";
-      script.onload = () => {
-        this.$nextTick(() => {
-          this.initCesium();
-        });
-      };
+      script.onload = () => this.initCesium();
 
       const link = document.createElement("link");
       link.rel = "stylesheet";
@@ -93,11 +97,9 @@ export default {
       document.head.appendChild(link);
       document.body.appendChild(script);
     },
-
     initCesium() {
       if (this.cesiumViewer || typeof Cesium === 'undefined') return;
 
-      // ✅ Apply your token before using any Cesium APIs
       Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NGNmODc0My03ODI2LTRkNGYtYWU5My0zYWM5MTU1OGE4NjgiLCJpZCI6MzIyNzEyLCJpYXQiOjE3NTI4MzE4ODd9.1oKKgaweBEEAU1pI-c_edzK7od6aBtD-0WEQsItJkl0";
 
       this.cesiumViewer = new Cesium.Viewer("map3d", {
@@ -107,15 +109,21 @@ export default {
         baseLayerPicker: true
       });
 
+      this.addCesiumEntities();
+    },
+    addCesiumEntities() {
+      if (!this.cesiumViewer) return;
+
+      this.cesiumViewer.entities.removeAll();
+
       this.stations.forEach(station => {
         const lat = station.latitude || station.lat;
         const lon = station.longitude || station.lon;
-
         if (lat && lon) {
           this.cesiumViewer.entities.add({
             position: Cesium.Cartesian3.fromDegrees(lon, lat),
             billboard: {
-              image: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png", // Pin icon
+              image: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
               width: 32,
               height: 32
             },
@@ -132,10 +140,15 @@ export default {
     }
   },
   watch: {
-    viewMode(newMode) {
-      if (newMode === "3d" && !this.cesiumViewer && typeof Cesium !== 'undefined') {
-        this.initCesium();
-      }
+    stations: {
+      handler() {
+        if (this.viewMode === "2d") {
+          this.addLeafletMarkers();
+        } else if (this.viewMode === "3d" && this.cesiumViewer) {
+          this.addCesiumEntities();
+        }
+      },
+      deep: true
     }
   }
 };
