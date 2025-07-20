@@ -204,7 +204,7 @@ export default {
           startDateTime: this.startDateTime // Add startDateTime to payload
         };
 
-        const res = await fetch("http://localhost:8000/forecast", {
+        const res = await fetch("http://127.0.0.1:8000/forecast", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
