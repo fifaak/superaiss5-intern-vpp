@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <!-- in public/index.html HEAD -->
+<!-- Cesium CSS -->
+<link rel="stylesheet" href="https://unpkg.com/cesium@1.116.0/Build/Cesium/Widgets/widgets.css" />
+
+<!-- Cesium JS -->
+<script src="https://unpkg.com/cesium@1.116.0/Build/Cesium/Cesium.js"></script>
+<!-- Cesium container styling (optional but recommended) -->
+<style>
+  #map3d {
+    position: relative;
+    height: 500px;
+    width: 100%;
+    margin: 0 auto;
+  }
+</style>
+    <title>VPP Forecasting Client</title>
+    <!-- Add Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Add some global styles -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+  <!-- ✅ Load Leaflet JS BEFORE your Vue app -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- ✅ Then load your Vue app -->
+  <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
