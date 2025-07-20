@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 import pandas as pd
 import onnxruntime as ort
@@ -26,19 +25,19 @@ class InferenceModel:
 
         self.output_name = self.sess.get_outputs()[0].name
 
-    def forecast(self, X: torch.Tensor, edge_index: torch.Tensor = None) -> torch.Tensor:
+    def forecast(self, X: np.ndarray, edge_index: np.ndarray = None) -> np.ndarray:
         """
         X: [B, N, 1, seq_len]
         edge_index: [2, E] (only required if the ONNX session expects it)
         """
-        Xn = X.cpu().numpy().astype(np.float32)
+        Xn = X.astype(np.float32)
         feed = {self.input_name: Xn}
 
         if self.need_edge:
             if edge_index is None:
                 raise ValueError("This model requires edge_index, but none was given.")
-            En = edge_index.cpu().numpy().astype(np.int64)
+            En = edge_index.astype(np.int64)
             feed[self.edge_name] = En
 
         out = self.sess.run([self.output_name], feed)[0]
-        return torch.from_numpy(out)
+        return out

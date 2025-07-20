@@ -1,8 +1,8 @@
 # server.py
-import torch
 from model import InferenceModel
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import numpy as np
 
 # built-in defaults
 _DEFAULT_LOCATIONS = {
@@ -41,7 +41,7 @@ def forecast():
             locations = _DEFAULT_LOCATIONS
 
         # build X tensor and validate shape
-        X_input = torch.tensor(data["X"]).float()
+        X_input = np.array(data["X"], dtype=np.float32)
         # expected shape: [1, EXPECTED_NODES, 1, T]
         if X_input.ndim != 4 or X_input.shape[1] != EXPECTED_NODES:
             raise ValueError(
@@ -51,13 +51,13 @@ def forecast():
 
         # build edge_index
         if inf.need_edge:
-            edge_index = torch.tensor(data["edge_index"]).long()
+            edge_index = np.array(data["edge_index"], dtype=np.int64)
             # optional: validate edge_index dims here...
             preds = inf.forecast(X_input, edge_index)
         else:
             preds = inf.forecast(X_input)
 
-        preds_np = preds.squeeze(0).numpy()  # [N, T]
+        preds_np = preds.squeeze(0)  # [N, T]
         station_data = []
         for i, name in enumerate(station_names):
             lat, lon = locations[name]
