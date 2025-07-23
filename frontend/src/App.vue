@@ -12,15 +12,27 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      <div class="content-section">
-        <Map :stations="stations"/>
-      </div>
-      <div class="content-section chart-section" v-if="stations.length">
-        <Visualizer 
-          :stations="stations" 
-          :start-date-time="startDateTime"
-        />
-      </div>
+      <Transition name="fade" mode="out-in">
+        <div v-if="stations.length" class="content-wrapper">
+          <div class="content-section chart-section">
+            <Visualizer 
+              :key="'visualizer-' + stations.length"
+              :stations="stations" 
+              :start-date-time="startDateTime"
+            />
+          </div>
+          <div class="content-section">
+            <Map :stations="stations"/>
+          </div>
+        </div>
+        <div v-else class="content-section empty-state">
+          <div class="text-center p-4">
+            <i class="bi bi-bar-chart-line fs-1 mb-3 d-block text-muted"></i>
+            <h5>No Data Available</h5>
+            <p class="text-muted">Add stations or load sample data to begin</p>
+          </div>
+        </div>
+      </Transition>
     </div>
   </div>
 </template>
@@ -96,7 +108,13 @@ export default {
   flex-direction: column;
   overflow-y: auto;
   padding: 1rem;
+}
+
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
+  height: 100%;
 }
 
 .content-section {
@@ -107,7 +125,28 @@ export default {
 }
 
 .chart-section {
-  min-height: 400px;
+  min-height: 450px;
+  margin-bottom: 1rem;
+  flex: 1;
+  position: relative;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .icon {

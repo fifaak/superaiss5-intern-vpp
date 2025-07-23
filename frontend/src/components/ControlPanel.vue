@@ -1,49 +1,77 @@
 <template>
   <div class="control-panel">
     <form @submit.prevent="submitForecast">
-      <div class="actions mb-3">
-        <button type="button" class="btn btn-primary" @click="addStation">
+      <div class="actions mb-4">
+        <button 
+          type="button" 
+          class="btn btn-primary action-btn" 
+          @click="addStation"
+          title="Add a new station to the forecast">
           <i class="bi bi-plus-lg"></i> Add Station
         </button>
-        <button type="button" class="btn btn-secondary" @click="fillSample">
+        <button 
+          type="button" 
+          class="btn btn-secondary action-btn" 
+          @click="fillSample"
+          title="Fill with sample station data">
           <i class="bi bi-file-text"></i> Sample Data
         </button>
-        <button type="button" class="btn btn-info" @click="fillChulaData">
+        <button 
+          type="button" 
+          class="btn btn-info action-btn" 
+          @click="fillChulaData"
+          title="Load real data from Chulalongkorn University">
           <i class="bi bi-database"></i> Chula's Real Data
         </button>
       </div>
 
       <!-- Data range slider for Chula's data -->
-      <div v-if="showChulaSlider" class="mb-3">
-        <label class="form-label">
-          <i class="bi bi-sliders"></i> Data Range (96 points per station)
+      <div v-if="showChulaSlider" class="slider-container mb-4">
+        <label class="form-label d-flex align-items-center">
+          <i class="bi bi-sliders me-2"></i> Data Range
+          <span class="badge bg-primary ms-2">96 points per station</span>
         </label>
-        <input
-          type="range"
-          class="form-range"
-          min="0"
-          :max="maxChulaSliderValue"
-          v-model="chulaDataIndex"
-          @input="updateChulaData"
-        />
-        <small class="text-muted d-block">
-          Current time range: {{ formatSliderDateTime(chulaDataIndex) }}
-        </small>
+        <div class="slider-wrapper">
+          <input
+            type="range"
+            class="form-range custom-range"
+            min="0"
+            :max="maxChulaSliderValue"
+            v-model="chulaDataIndex"
+            @input="updateChulaData"
+          />
+          <div class="time-range-display">
+            <i class="bi bi-clock me-1"></i>
+            {{ formatSliderDateTime(chulaDataIndex) }}
+          </div>
+        </div>
       </div>
 
       <!-- Add datetime input before stations list -->
-      <div class="mb-3">
-        <label class="form-label">
-          <i class="bi bi-calendar"></i> Start Date/Time
+      <div class="datetime-section mb-4">
+        <label class="form-label d-flex align-items-center">
+          <i class="bi bi-calendar me-2"></i> Start Date/Time
+          <i class="bi bi-info-circle ms-2" title="Select the starting date and time for the forecast"></i>
         </label>
-        <input
-          type="datetime-local"
-          class="form-control"
-          v-model="startDateTime"
-          required
-        />
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-clock"></i>
+          </span>
+          <input
+            type="datetime-local"
+            class="form-control"
+            v-model="startDateTime"
+            required
+            :class="{ 'is-invalid': !startDateTime }"
+          />
+        </div>
       </div>
 
+      <h5 class="section-title mb-3">
+        <i class="bi bi-geo-alt me-2"></i>
+        Stations
+        <span class="badge bg-secondary ms-2">{{ stations.length }}</span>
+      </h5>
       <div class="stations-list">
         <div
           v-for="(st, idx) in stations"
@@ -106,24 +134,39 @@
       </div>
 
       <div class="submit-section">
-        <button class="btn btn-primary w-100" type="submit" :disabled="loading">
-          <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-          <i v-else class="bi bi-play-fill"></i>
-          {{ loading ? 'Running...' : 'Run Forecast' }}
+        <button 
+          class="btn btn-primary w-100 submit-btn" 
+          type="submit" 
+          :disabled="loading"
+          :class="{ 'btn-loading': loading }">
+          <div class="d-flex align-items-center justify-content-center">
+            <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+            <i v-else class="bi bi-play-fill me-2"></i>
+            {{ loading ? 'Running Forecast...' : 'Run Forecast' }}
+          </div>
         </button>
       </div>
     </form>
 
-    <div v-if="error" class="alert alert-danger mt-3">
-      {{ error }}
-    </div>
-
-    <div v-if="result" class="result-section mt-3">
-      <h6>Predictions:</h6>
-      <div class="result-box">
-        <pre>{{ result }}</pre>
+    <transition name="fade">
+      <div v-if="error" class="alert alert-danger mt-3 d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error }}
       </div>
-    </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="result" class="result-section mt-4">
+        <h6 class="d-flex align-items-center mb-3">
+          <i class="bi bi-graph-up me-2"></i>
+          Predictions
+          <span class="badge bg-success ms-2">Ready</span>
+        </h6>
+        <div class="result-box">
+          <pre>{{ result }}</pre>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -343,6 +386,9 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 12px;
 }
 
 .stations-list {
@@ -354,13 +400,15 @@ export default {
 
 .station-card {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  transition: transform 0.2s ease;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
 }
 
 .station-card:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
 .station-header {
@@ -368,33 +416,99 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: 12px;
+}
+
+.action-btn {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .submit-section {
   position: sticky;
   bottom: 0;
-  padding: 1rem 0;
-  background: white;
-  border-top: 1px solid #eee;
+  background: linear-gradient(to bottom, transparent, #f8f9fa 20%);
   margin: 0 -1.5rem;
-  padding: 1rem 1.5rem;
+  padding: 1.5rem;
+}
+
+.submit-btn {
+  border-radius: 8px;
+  padding: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-loading {
+  background-color: #0056b3;
 }
 
 .result-box {
-  background: #f8f9fa;
-  border-radius: 4px;
-  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  padding: 1.2rem;
   font-size: 0.9em;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
+  border: 1px solid #e9ecef;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.section-title {
+  color: #495057;
+  font-weight: 500;
+}
+
+.slider-container {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.slider-wrapper {
+  position: relative;
+  padding: 0.5rem 0;
+}
+
+.custom-range {
+  height: 6px;
+}
+
+.time-range-display {
+  margin-top: 0.5rem;
+  color: #6c757d;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+/* Transitions */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: 768px) {
+  .control-panel {
+    padding: 1rem;
+    border-radius: 0;
+  }
+
   .stations-list {
     margin: 0 -1rem;
     padding: 0 1rem;
@@ -403,6 +517,11 @@ export default {
   .submit-section {
     margin: 0 -1rem;
     padding: 1rem;
+  }
+
+  .action-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9em;
   }
 }
 </style>
