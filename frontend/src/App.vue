@@ -3,7 +3,7 @@
     <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-header">
-        <h3><i class="bi bi-bar-chart-line-fill icon"></i> VPP Forecast</h3>
+        <img src="/thaivppplatform_logo.png" alt="Thai VPP Platform Logo" class="logo" />
       </div>
       <div class="sidebar-content">
         <ControlPanel @predicted="handlePredicted" @preview="handlePreview" />
@@ -113,6 +113,13 @@ export default {
 .icon {
   margin-right: 0.5rem;
   vertical-align: middle;
+}
+
+.logo {
+  width: 200px;
+  height: auto;
+  margin-bottom: 1rem;
+  display: block;
 }
 
 @media (max-width: 1024px) {
