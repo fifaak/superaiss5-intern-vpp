@@ -204,7 +204,7 @@ export default {
           startDateTime: this.startDateTime // Add startDateTime to payload
         };
 
-        const res = await fetch("https://fifaak.pythonanywhere.com/forecast", {
+        const res = await fetch(" http://192.168.1.38:8000/forecast", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),

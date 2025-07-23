@@ -19,7 +19,7 @@ EXPECTED_NODES = len(_DEFAULT_LOCATIONS)
 app = Flask(__name__)
 CORS(app)
 
-inf = InferenceModel("astgcnv2_5epoch.onnx", device="cpu")
+inf = InferenceModel("astgcnv2_50epoch.onnx", device="cpu")
 
 @app.route("/forecast", methods=["POST"])
 def forecast():
