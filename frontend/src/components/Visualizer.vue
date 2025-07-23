@@ -7,8 +7,9 @@
 <script>
 import { ref, onMounted, watch } from 'vue'
 import { Chart, registerables } from 'chart.js'
+import annotationPlugin from 'chartjs-plugin-annotation'
 
-Chart.register(...registerables)
+Chart.register(...registerables, annotationPlugin)
 
 export default {
   name: 'Visualizer',
@@ -25,6 +26,8 @@ export default {
   setup(props) {
     const chartEl = ref(null)
     let chartInstance = null
+    // store preview data length (first emission) to delineate current vs forecasted
+    const previewLength = ref(0)
 
     const buildChart = (stationsData) => {
       const ctx = chartEl.value.getContext('2d')
@@ -33,14 +36,6 @@ export default {
       if (chartInstance) {
         chartInstance.destroy()
       }
-
-      // Example: plot each station as a separate dataset
-      const datasets = stationsData.map((st, idx) => ({
-        label: st.name,
-        data: st.values,
-        fill: false,
-        // Chart.js will pick default colors
-      }))
 
       // Generate time labels with date and time
       const generateTimeLabels = () => {
@@ -61,10 +56,37 @@ export default {
         return labels
       }
 
+      const labels = generateTimeLabels()
+      // Map each station into a dataset
+      const datasets = stationsData.map((st, idx) => ({
+        label: st.name,
+        data: st.values,
+        fill: false,
+      }))
+
+      // Prepare annotation ranges only if forecasted data exists
+      let annotations = {}
+      if (previewLength.value && labels.length > previewLength.value) {
+        annotations.currentData = {
+          type: 'box',
+          xMin: labels[0],
+          xMax: labels[previewLength.value - 1],
+          backgroundColor: 'rgba(0, 255, 0, 0.1)',
+          borderWidth: 0
+        }
+        annotations.forecastData = {
+          type: 'box',
+          xMin: labels[previewLength.value],
+          xMax: labels[labels.length - 1],
+          backgroundColor: 'rgba(255, 0, 0, 0.1)',
+          borderWidth: 0
+        }
+      }
+
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: generateTimeLabels(),
+          labels,
           datasets
         },
         options: {
@@ -98,6 +120,9 @@ export default {
                 top: 10,
                 bottom: 20
               }
+            },
+            annotation: {
+              annotations
             }
           },
           scales: {
@@ -132,15 +157,25 @@ export default {
     }
 
     onMounted(() => {
-      // initial draw
+      // initial draw and set previewLength if not set
+      if (props.stations?.[0]?.values.length) {
+        previewLength.value = props.stations[0].values.length
+      }
       buildChart(props.stations)
     })
 
-    // redraw whenever stations prop changes
+    // Update chart whenever stations prop changes.
     watch(
       () => props.stations,
       (newStations) => {
-        if (chartEl.value && newStations && newStations.length) {
+        if (newStations && newStations.length) {
+          // Set previewLength only once (if forecast data appended, length increases)
+          if (previewLength.value === 0) {
+            previewLength.value = newStations[0].values.length
+          } else if (newStations[0].values.length < previewLength.value) {
+            // if preview data is updated
+            previewLength.value = newStations[0].values.length
+          }
           buildChart(newStations)
         }
       },

@@ -6,7 +6,7 @@
         <h3><i class="bi bi-bar-chart-line-fill icon"></i> VPP Forecast</h3>
       </div>
       <div class="sidebar-content">
-        <ControlPanel @predicted="handlePredicted" />
+        <ControlPanel @predicted="handlePredicted" @preview="handlePreview" />
       </div>
     </div>
 
@@ -42,7 +42,15 @@ export default {
     };
   },
   methods: {
-    handlePredicted({ stations, startDateTime }) {
+    handlePredicted({ stations: forecastStations, startDateTime }) {
+      // merge forecast values onto current preview data
+      this.stations = this.stations.map((previewStation, idx) => ({
+        ...previewStation,
+        values: previewStation.values.concat(forecastStations[idx].values)
+      }));
+      this.startDateTime = startDateTime;
+    },
+    handlePreview({ stations, startDateTime }) {
       this.stations = stations;
       this.startDateTime = startDateTime;
     }

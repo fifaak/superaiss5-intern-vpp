@@ -225,7 +225,24 @@ export default {
         this.loading = false;
       }
     },
+    emitPreview() {
+      const parsed = this.stations.map(st => {
+        const arr = st.values
+          .split(',')
+          .map(v => parseFloat(v.trim()))
+          .filter(v => !Number.isNaN(v));
+        return { ...st, values: arr };
+      });
+      this.$emit('preview', { stations: parsed, startDateTime: this.startDateTime });
+    }
   },
+  watch: {
+    stations: {
+      handler() { this.emitPreview(); },
+      deep: true
+    },
+    startDateTime(newVal) { this.emitPreview(); }
+  }
 };
 </script>
 
