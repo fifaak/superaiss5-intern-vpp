@@ -216,7 +216,9 @@ export default {
         this.maxChulaSliderValue = Math.max(...Object.values(stations).map(s => s.values.length - 96));
         this.chulaDataIndex = 0;
         this.showChulaSlider = true;
-        this.updateChulaData();
+        this.$nextTick(() => {
+          this.updateChulaData();
+        });
       } catch (error) {
         this.error = "Error loading Chula's data: " + error.message;
       }
