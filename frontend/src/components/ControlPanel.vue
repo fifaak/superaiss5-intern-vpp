@@ -8,6 +8,27 @@
         <button type="button" class="btn btn-secondary" @click="fillSample">
           <i class="bi bi-file-text"></i> Sample Data
         </button>
+        <button type="button" class="btn btn-info" @click="fillChulaData">
+          <i class="bi bi-database"></i> Chula's Real Data
+        </button>
+      </div>
+
+      <!-- Data range slider for Chula's data -->
+      <div v-if="showChulaSlider" class="mb-3">
+        <label class="form-label">
+          <i class="bi bi-sliders"></i> Data Range (96 points per station)
+        </label>
+        <input
+          type="range"
+          class="form-range"
+          min="0"
+          :max="maxChulaSliderValue"
+          v-model="chulaDataIndex"
+          @input="updateChulaData"
+        />
+        <small class="text-muted d-block">
+          Current time range: {{ formatSliderDateTime(chulaDataIndex) }}
+        </small>
       </div>
 
       <!-- Add datetime input before stations list -->
@@ -118,7 +139,11 @@ export default {
       ],
       result: null,
       loading: false,
-      error: null
+      error: null,
+      showChulaSlider: false,
+      chulaDataIndex: 0,
+      chulaData: null,
+      maxChulaSliderValue: 0
     };
   },
   methods: {
@@ -166,6 +191,71 @@ export default {
         },
       ];
     },
+    async fillChulaData() {
+      try {
+        const response = await fetch('/test_data_chula.csv');
+        const csvText = await response.text();
+        
+        // Parse CSV
+        const rows = csvText.trim().split('\n').slice(1); // Skip header
+        const stations = {};
+        
+        rows.forEach(row => {
+          const [station, datetime, value] = row.split(',');
+          if (!stations[station]) {
+            stations[station] = {
+              dates: [],
+              values: []
+            };
+          }
+          stations[station].dates.push(datetime);
+          stations[station].values.push(parseFloat(value));
+        });
+
+        this.chulaData = stations;
+        this.maxChulaSliderValue = Math.max(...Object.values(stations).map(s => s.values.length - 96));
+        this.chulaDataIndex = 0;
+        this.showChulaSlider = true;
+        this.updateChulaData();
+      } catch (error) {
+        this.error = "Error loading Chula's data: " + error.message;
+      }
+    },
+
+    formatSliderDateTime(index) {
+      if (!this.chulaData) return '';
+      const firstStation = Object.values(this.chulaData)[0];
+      const startDate = firstStation.dates[index];
+      const endDate = firstStation.dates[index + 95];
+      return `${startDate} to ${endDate}`;
+    },
+
+    updateChulaData() {
+      const stationCoordinates = {
+        'Data_สถานีชาร์จ': { lat: 13.73624, lon: 100.52995 },
+        'Data_อาคารจามจุรี4': { lat: 13.73260, lon: 100.53177 },
+        'Data_อาคารจามจุรี 9': { lat: 13.73380, lon: 100.53045 },
+        'Data_อาคารจุลจักรพงษ์': { lat: 13.73684, lon: 100.52852 },
+        'Data_อาคารบรมราชกุมารี': { lat: 13.73800, lon: 100.52905 },
+        'Data_อาคารวิทยนิเวศน์': { lat: 13.73723, lon: 100.53015 }
+      };
+
+      const index = parseInt(this.chulaDataIndex);
+      
+      this.stations = Object.entries(this.chulaData).map(([name, data]) => ({
+        name,
+        lat: stationCoordinates[name]?.lat || null,
+        lon: stationCoordinates[name]?.lon || null,
+        values: data.values.slice(index, index + 96).join(',')
+      }));
+
+      // Update start datetime
+      if (this.chulaData && Object.keys(this.chulaData).length > 0) {
+        const firstStation = Object.values(this.chulaData)[0];
+        this.startDateTime = firstStation.dates[index].slice(0, 16); // Format: YYYY-MM-DDThh:mm
+      }
+    },
+
     async submitForecast() {
       this.loading = true;
       this.error = null;
