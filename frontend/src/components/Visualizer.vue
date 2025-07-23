@@ -18,6 +18,14 @@ export default {
       type: Array,
       required: true
     },
+    actualData: {
+      type: Array,
+      default: () => []
+    },
+    isChulaSample: {
+      type: Boolean,
+      default: false
+    },
     startDateTime: {
       type: String,
       default: null
@@ -57,12 +65,45 @@ export default {
       }
 
       const labels = generateTimeLabels()
-      // Map each station into a dataset
-      const datasets = stationsData.map((st, idx) => ({
-        label: st.name,
-        data: st.values,
-        fill: false,
-      }))
+      // Map each station into datasets
+      let datasets = [];
+      
+      stationsData.forEach((st, idx) => {
+        // Add forecast data
+        datasets.push({
+          label: `${st.name} (Forecast)`,
+          data: st.values,
+          fill: false,
+          borderColor: `hsl(${idx * 60}, 70%, 50%)`,
+          tension: 0.4
+        });
+
+        // If we have actual data for Chula sample, add it and the difference
+        if (props.isChulaSample && props.actualData[idx]) {
+          const actualData = props.actualData[idx];
+          
+          // Add actual data
+          datasets.push({
+            label: `${st.name} (Actual)`,
+            data: actualData.values.map(v => v.actual),
+            fill: false,
+            borderColor: `hsl(${idx * 60}, 70%, 70%)`,
+            borderDash: [5, 5],
+            tension: 0.4
+          });
+
+          // Add difference data
+          datasets.push({
+            label: `${st.name} (Difference)`,
+            data: actualData.values.map(v => v.difference),
+            fill: false,
+            borderColor: `hsl(${idx * 60}, 70%, 30%)`,
+            borderWidth: 1,
+            pointStyle: 'cross',
+            tension: 0
+          });
+        }
+      });
 
       // Prepare annotation ranges only if forecasted data exists
       let annotations = {}

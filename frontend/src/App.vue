@@ -18,6 +18,8 @@
             <Visualizer 
               :key="'visualizer-' + stations.length"
               :stations="stations" 
+              :actual-data="actualData"
+              :is-chula-sample="isChulaSample"
               :start-date-time="startDateTime"
             />
           </div>
@@ -50,11 +52,30 @@ export default {
   data() {
     return {
       stations: [],
-      startDateTime: null
+      actualData: [],
+      startDateTime: null,
+      isChulaSample: false
     };
   },
   methods: {
-    handlePredicted({ stations: forecastStations, startDateTime }) {
+    handlePredicted({ stations: forecastStations, startDateTime, isChulaSample, actualData }) {
+      // Store actual data if it's Chula sample
+      if (isChulaSample && actualData) {
+        this.isChulaSample = true;
+        this.actualData = actualData.map(data => ({
+          ...data,
+          // Add difference calculation between forecast and actual
+          values: data.values.map((val, i) => ({
+            actual: val,
+            forecast: forecastStations[i].values[i],
+            difference: val - forecastStations[i].values[i]
+          }))
+        }));
+      } else {
+        this.isChulaSample = false;
+        this.actualData = [];
+      }
+
       // merge forecast values onto current preview data
       this.stations = this.stations.map((previewStation, idx) => ({
         ...previewStation,
@@ -64,7 +85,9 @@ export default {
     },
     handlePreview({ stations, startDateTime }) {
       this.stations = stations;
+      this.actualData = [];
       this.startDateTime = startDateTime;
+      this.isChulaSample = false;
     }
   }
 };
