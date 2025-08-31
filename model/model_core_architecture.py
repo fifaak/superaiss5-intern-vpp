@@ -28,6 +28,36 @@ class ASTGCN_V2(nn.Module):
         out = self.astgcn(x, ei_adp.to(x.device))
         return F.relu(out)
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch_geometric_temporal import ASTGCN
+
+class ASTGCN_V1_5(nn.Module):
+    def __init__(self, num_nodes, **kwargs):
+        super().__init__()
+        self.astgcn = ASTGCN(**kwargs)
+
+    def forward(self, x, edge_index):
+        """
+        x: [batch_size, num_nodes, num_features, num_timesteps]
+        edge_index: Sparse graph connectivity (2, num_edges)
+        """
+        out = self.astgcn(x, edge_index)
+        return F.relu(out)
+class ASTGCN_V1(nn.Module):
+    def __init__(self, num_nodes, **kwargs):
+        super().__init__()
+        self.astgcn = ASTGCN(**kwargs)
+
+    def forward(self, x, edge_index):
+        """
+        x: [batch_size, num_nodes, num_features, num_timesteps]
+        edge_index: Sparse graph connectivity (2, num_edges)
+        """
+        out = self.astgcn(x, edge_index)
+        return out
+
 # default_config_ASTGCN_V2 = {
 #     "nb_block": 2,
 #     "in_channels": 1,
